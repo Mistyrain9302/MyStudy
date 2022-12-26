@@ -6,35 +6,7 @@ import os
 file_path='.\\data\\src'
 file_list = os.listdir(file_path)
 file_list
-# %%
-def SVM_create(type,max_iter,epsilon):
-    svm=cv2.ml.SVM_create()
-    svm.setType(cv2.ml.SVM_C_SVC)
-    svm.setKernel(cv2.ml.SVM_LINEAR)
-    svm.setGamma(1)
-    svm.setC(1)
-    svm.setTermCriteria((type,max_iter,epsilon))
-    return svm
-# %%
-nsample=10000
-trainData=[]
-for i in range(nsample):
-    img_array=np.fromfile(file_path+'\\'+file_list[i],np.uint8)
-    img_decoded=cv2.imdecode(img_array,-1)
-    img=cv2.resize(img_decoded,dsize=(350,150),interpolation=cv2.INTER_AREA)
-    trainData.append(img)
-# %%
-rsh_trainData=np.reshape(trainData,(nsample,-1)).astype('float32')
-# %%
-labels=np.zeros((nsample,1),np.int32)
-labels[:5000]=1
-# %%
-# print("SVM 객체 생성")
-# svm = SVM_create(cv2.TERM_CRITERIA_MAX_ITER,1000,1e-6)
-# svm.train(rsh_trainData,cv2.ml.ROW_SAMPLE,labels)
-# svm.save("SVMtrain.xml")
-# print("SVM 객체 저장 완료")
-# %%
+
 def preprocessing(car_no):
     img_array=np.fromfile(file_path+'\\'+file_list[car_no],np.uint8)
     image=cv2.imdecode(img_array,cv2.IMREAD_COLOR)    
@@ -71,22 +43,6 @@ def find_candidates(image):
                   for center,size,angle in rects if verify_aspect_size(size)]
     return candidates
 # %%
-# 실행 영역
-def checkImg(no=0):
-    image,morph = preprocessing(no)
-    if image is None:Exception('영상 파일 읽기 에러')
-
-    candidates=find_candidates(morph)
-    for candidate in candidates:
-        pts=np.int32(cv2.boxPoints(candidate))
-        cv2.polylines(image,[pts],True,(0,225,255),2)
-        print(candidate)
-    if not candidates:
-        print('번호판 후보 영역 미검출')
-    cv2.imshow('image',image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-# %%
 def color_candidate_img(image,candi_center):
     h,w=image.shape[:2]
     fill = np.zeros((h+2,w+2),np.uint8)
@@ -100,7 +56,7 @@ def color_candidate_img(image,candi_center):
         if 0<=x<w and 0<=y<h:
             _,_,fill,_=cv2.floodFill(image,fill,(x,y),255,dif1,dif2,flags)
         return cv2.threshold(fill,120,255,cv2.THRESH_BINARY)[1]
-# %%
+
 def rotate_plate(image,rect):
     center,(w,h),angle = rect
     if w < h:
@@ -113,7 +69,7 @@ def rotate_plate(image,rect):
     crop_img = cv2.getRectSubPix(rot_img,(w,h),center)
     crop_img = cv2.cvtColor(crop_img,cv2.COLOR_BGR2GRAY)
     return cv2.resize(crop_img,(144,28))
-# %%
+
 def checkImg(car_no):    
     image,morph = preprocessing(car_no)
     candidates=find_candidates(morph)
@@ -130,53 +86,3 @@ def checkImg(car_no):
     cv2.imshow('image',image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-# %%
-car_no=7
-image,morph = preprocessing(car_no)
-candidates=find_candidates(morph)
-
-fills = [color_candidate_img(image,size) for size,_,_ in candidates]
-new_candis = [find_candidates(fill) for fill in fills]
-new_candis = [cand[0] for cand in new_candis if cand]
-candidate_imgs = [rotate_plate(image,cand) for cand  in new_candis]
-
-svm=cv2.ml.SVM_load('SVMtrain.xml')
-rows = np.reshape(candidate_imgs,(len(candidate_imgs),-1))
-_,results=svm.predict(rows.astype('float32'))
-correct=np.where(results==1)[0]
-
-print('분류결과:\n',results)
-print('번호판 영상 인덱스:',correct)
-# %%
-checkImg(18)
-# %%
-labels=np.zeros((5,1),np.int8)
-labels[5:]=1
-svm=cv2.ml.SVM_create()
-svm.setType(cv2.ml.SVM_C_SVC)
-svm.setKernel(cv2.ml.SVM_RBF)
-svm.trainAuto(rsh_trainData[:5],cv2.ml.ROW_SAMPLE,labels)
-print('C:', svm.getC())
-print('Gamma:', svm.getGamma())
-# %%
-len(labels)
-# %%
-# 8개의 데이터 생성
-trains = np.array([[150, 200], [200, 250],
-                   [100, 250], [150, 300],
-                   [350, 100], [400, 200],
-                   [400, 300], [350, 400]], dtype=np.float32)
-
-# 앞 4개는 0번 클래스 뒤 4개는 1번 클래스로 지정
-labels = np.array([0, 0, 0, 0, 1, 1, 1, 1])
-
-svm = cv2.ml.SVM_create()
-svm.setType(cv2.ml.SVM_C_SVC) # c 파라미터
-# svm.setKernel(cv2.ml.SVM_LINEAR) # Gamma 파라미터
-svm.setKernel(cv2.ml.SVM_RBF) # Gamma 파라미터
-
-# trainAuto 함수가 C, Gamma 값을 결정해줌
-svm.trainAuto(trains, cv2.ml.ROW_SAMPLE, labels)
-print('C:', svm.getC())
-print('Gamma:', svm.getGamma())
-# %%
