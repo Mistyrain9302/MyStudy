@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import os
 # %%
-file_path='.\\data\\Validation\\[원천]자동차번호판OCR데이터'
+file_path='.\\data\\src'
 file_list = os.listdir(file_path)
 file_list
 # %%
@@ -16,7 +16,7 @@ def SVM_create(type,max_iter,epsilon):
     svm.setTermCriteria((type,max_iter,epsilon))
     return svm
 # %%
-nsample=1200
+nsample=10000
 trainData=[]
 for i in range(nsample):
     img_array=np.fromfile(file_path+'\\'+file_list[i],np.uint8)
@@ -27,7 +27,7 @@ for i in range(nsample):
 rsh_trainData=np.reshape(trainData,(nsample,-1)).astype('float32')
 # %%
 labels=np.zeros((nsample,1),np.int32)
-labels[:600]=1
+labels[:5000]=1
 # %%
 print("SVM 객체 생성")
 svm = SVM_create(cv2.TERM_CRITERIA_MAX_ITER,1000,1e-6)
@@ -52,9 +52,6 @@ def preprocessing(car_no):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     return image, morph
-
-# %%
-preprocessing(5)
 # %%
 def verify_aspect_size(size):
     w, h = size
@@ -151,5 +148,35 @@ correct=np.where(results==1)[0]
 print('분류결과:\n',results)
 print('번호판 영상 인덱스:',correct)
 # %%
-checkImg(7)
+checkImg(18)
+# %%
+labels=np.zeros((5,1),np.int8)
+labels[5:]=1
+svm=cv2.ml.SVM_create()
+svm.setType(cv2.ml.SVM_C_SVC)
+svm.setKernel(cv2.ml.SVM_RBF)
+svm.trainAuto(rsh_trainData[:5],cv2.ml.ROW_SAMPLE,labels)
+print('C:', svm.getC())
+print('Gamma:', svm.getGamma())
+# %%
+len(labels)
+# %%
+# 8개의 데이터 생성
+trains = np.array([[150, 200], [200, 250],
+                   [100, 250], [150, 300],
+                   [350, 100], [400, 200],
+                   [400, 300], [350, 400]], dtype=np.float32)
+
+# 앞 4개는 0번 클래스 뒤 4개는 1번 클래스로 지정
+labels = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+
+svm = cv2.ml.SVM_create()
+svm.setType(cv2.ml.SVM_C_SVC) # c 파라미터
+# svm.setKernel(cv2.ml.SVM_LINEAR) # Gamma 파라미터
+svm.setKernel(cv2.ml.SVM_RBF) # Gamma 파라미터
+
+# trainAuto 함수가 C, Gamma 값을 결정해줌
+svm.trainAuto(trains, cv2.ml.ROW_SAMPLE, labels)
+print('C:', svm.getC())
+print('Gamma:', svm.getGamma())
 # %%
