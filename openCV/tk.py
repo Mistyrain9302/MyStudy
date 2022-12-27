@@ -1,52 +1,60 @@
 # %%
 from tkinter import *
-from tkinter import ttk
 from PIL import Image, ImageTk
 import pandas as pd
-import numpy as np
 from myDef import preprocessing
 # %%
 image,_=preprocessing(6)
+car_no='26차 2861'
+df=pd.read_csv('./info.csv',encoding='cp949')
+cols=['car_info', 'Patient_Id','Gender','exp1', 'exp2', 'exp3']
 # %%
-window=Tk()
+def df_finder(car_no,df):
+    if sum(df['car_info']==car_no) >=1:
+        idx=df[df['car_info']==car_no].index.tolist()[0]
+        P_id = df.loc[idx,'Patient_Id']
+        gender = df.loc[idx,'Gender']
+        age = df.loc[idx,'Age']
+        exp1 = df.loc[idx,'exp1']
+        exp2 = df.loc[idx,'exp2']
+        exp3 = df.loc[idx,'exp3']
+        data_list=[P_id,gender,age,exp1,exp2,exp3]
 
-window.title("차량 정보")
-window.resizable(1,1)
+        return data_list
+    else:
+        print('일치하는 차량 번호 없음')
+        return None
+# %%
+def open_window():
+    window=Tk()
 
-img2=Image.fromarray(image)
-image_tk = ImageTk.PhotoImage(img2,master=window)
+    window.title("차량 정보")
+    window.resizable(1,1)
+    df_list=df_finder(car_no,df)
+    if df_list is not None:    
+        img2=Image.fromarray(image)
+        image_tk = ImageTk.PhotoImage(img2,master=window)
 
-label1= Label(window,image=image_tk)
-label1.configure(image=image_tk)
+        img_label= Label(window,image=image_tk)
+        img_label.configure(image=image_tk)
+        img_label.grid(row=0,column=0)
 
-label1.grid(row=0,column=0)
+        frame=Frame(window,relief='solid',bd=2,background='white',padx=2,pady=2)
+        frame.grid(row=0,column=1)
+        
+        for i in enumerate(cols):
+            globals()["label{}".format(i[0])]=Label(master=frame, relief='ridge',bd=2,text=cols[i[0]],bg='white')
+            globals()["label{}".format(i[0])].grid(row=i[0],column=0)
+        
+        for i in enumerate(df_list):
+            globals()["label{}".format(i[0])]=Label(master=frame,text=df_list[i[0]],bg='white')
+            globals()["label{}".format(i[0])].grid(row=i[0],column=1)
 
-treeview=ttk.Treeview(columns=["name", "age", "grade"],
-                      displaycolumns=["name", "age", "grade"],
-                      master=window)
-treeview.configure()
-
-treeview.grid(row=0,column=1)
-
-
-treeview.column("name", width=100, anchor="center")
-treeview.heading("name", text="이름", anchor="center")
-
-treeview.column("age", width=50, anchor="center")
-treeview.heading("age", text="나이", anchor="center")
-
-treeview.column("grade", width=50, anchor="center")
-treeview.heading("grade", text="등급", anchor="center")
-
-# 컬럼제목만 보이게함
-treeview["show"] = "headings"
-
-treeValueList = [("Aiden", 20, "A"),
-                 ("Matthew", 19, "B"),
-                 ("John", 21, "C")]
-
-for i in range(len(treeValueList)):
-    treeview.insert("", "end", text="", values=treeValueList[i], iid=i)
-
-window.mainloop()
+    else:
+        label_none=Label(master=window,text='차량 정보 없음')
+        label_none.pack(side='top')
+        
+    window.mainloop()
+# %%
+open_window()
 # %%
