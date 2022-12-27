@@ -1,13 +1,14 @@
 # %%
 from tkinter import *
 from PIL import Image, ImageTk
+import numpy as np
 import pandas as pd
-from myDef import preprocessing
+from opencv import img_ori,plate_chars
 # %%
-image,_=preprocessing(6)
-car_no='36서 9478'
+image=np.array(img_ori)
+car_no=plate_chars[0]
 df=pd.read_csv('./info.csv',encoding='cp949')
-cols=['car_info', 'Patient_Id','Gender','age','exp1', 'exp2', 'exp3']
+cols=['차량 정보', '환자 ID','성별','나이','진료과1', '진료과2', '진료과3']
 # %%
 def df_finder(car_no,df):
     if sum(df['car_info']==car_no) >=1:
@@ -44,17 +45,24 @@ def open_window():
         frame.grid(row=0,column=1)
         
         for i in enumerate(cols):
-            globals()["label{}".format(i[0])]=Label(master=frame,relief='solid',bd=1,width=15,height=2,text=cols[i[0]],bg='white')
+            globals()["label{}".format(i[0])]=Label(master=frame,relief='solid',
+                                                    bd=1,width=15,height=2,
+                                                    text=cols[i[0]],bg='white')
             globals()["label{}".format(i[0])].grid(row=i[0],column=0)
         
         for i in enumerate(df_list):
-            globals()["label{}".format(i[0])]=Label(master=frame,relief='ridge',bd=1,width=15,height=2,text=df_list[i[0]],bg='white')
+            globals()["label{}".format(i[0])]=Label(master=frame,relief='ridge',
+                                                    bd=1,width=15,height=2,
+                                                    text=df_list[i[0]],bg='white')
             globals()["label{}".format(i[0])].grid(row=i[0],column=1)
 
     else:
-        label_none=Label(master=window,text='차량 정보 없음')
+        window.geometry('640x640')
+        label_none=Label(master=window,text='일치하는 차량 정보 없음',
+                         font=("궁서체",40),fg='red')
         label_none.pack(side='top')
         
     window.mainloop()
 # %%
 open_window()
+# %%
